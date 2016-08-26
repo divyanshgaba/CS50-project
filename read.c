@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
        
             // read RGB triple from infile
             fread(&first, sizeof(RGBTRIPLE), 1, inptr);
-            if(first.rgbtRed!=255&&first.rgbtBlue!=255&&first.rgbtGreen!=255&&first.rgbtRed!=0&&first.rgbtBlue!=0&&first.rgbtGreen!=0)
+            if(first.rgbtRed!=255&&first.rgbtBlue!=255&&first.rgbtGreen!=255)
             {    bits[w++] = first.rgbtRed&1;
                 if(w==8)
                 {   
