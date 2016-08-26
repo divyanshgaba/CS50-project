@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
         }
        
     }
-    printf("%d %d %d",len,w,ghgh);
+    printf("%d %d %d\n",len,w,ghgh);
     len=w;
     w=0;
     // determine padding for scanlines
@@ -108,17 +108,16 @@ int main(int argc, char* argv[])
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
           
                
-            //if(w<len&&triple.rgbtRed!=255&&triple.rgbtBlue!=255&&triple.rgbtGreen!=255&&triple.rgbtRed!=0&&triple.rgbtBlue!=0&&triple.rgbtGreen!=0)
-            if(w<len)
-            {       if(triple.rgbtRed!=255)
-                        triple.rgbtRed = triple.rgbtRed%2==0?triple.rgbtRed:triple.rgbtRed-1;
-                        triple.rgbtRed = triple.rgbtRed+bits[w++];
-                    if(w<len&&triple.rgbtBlue!=255)
+            if(w<len&&triple.rgbtRed!=255&&triple.rgbtBlue!=255&&triple.rgbtGreen!=255)//&&triple.rgbtRed!=0&&triple.rgbtBlue!=0&&triple.rgbtGreen!=0)
+            {   
+                    triple.rgbtRed = triple.rgbtRed%2==0?triple.rgbtRed:triple.rgbtRed-1;
+                    triple.rgbtRed = triple.rgbtRed+bits[w++];
+                    if(w<len)
                     {
                         triple.rgbtBlue = triple.rgbtBlue%2==0?triple.rgbtBlue:triple.rgbtBlue-1;
                         triple.rgbtBlue = triple.rgbtBlue+bits[w++];
                     }
-                    if(w<len&&triple.rgbtGreen!=255)
+                    if(w<len)
                     {
                         triple.rgbtGreen = triple.rgbtGreen%2==0?triple.rgbtGreen:triple.rgbtGreen-1;
                         triple.rgbtGreen = triple.rgbtGreen+bits[w++];
