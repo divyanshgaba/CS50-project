@@ -8,7 +8,7 @@
  */
 
 #include <stdint.h>
-
+#include <stdbool.h>
 /**
  * Common Data Types 
  *
@@ -80,3 +80,7 @@ typedef struct
     BYTE  rgbtRed;
 } __attribute__((__packed__))
 RGBTRIPLE;
+int ConvertBinaryToDecimal(long long n);
+bool Makeme(int *bits,FILE *outptr);
+bool decode();
+bool encode();
