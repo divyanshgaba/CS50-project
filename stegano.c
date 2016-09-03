@@ -1,5 +1,3 @@
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,10 +21,10 @@ bool Makeme(int *bits,FILE *outptr)
 {
     
     char c[9];
-    sprintf(c,"%d%d%d%d%d%d%d",bits[6],bits[5],bits[4],bits[3],bits[2],bits[1],bits[0]);
+    sprintf(c,"%d%d%d%d%d%d%d%d",bits[7],bits[6],bits[5],bits[4],bits[3],bits[2],bits[1],bits[0]);
     int d = atoi(c);
     char ch = ConvertBinaryToDecimal(d);
-    if(ch=='0')
+    if(ch=='~')
     {
         fclose(outptr);
         return false;
@@ -74,7 +72,8 @@ bool decode()
         fprintf(stderr, "Could not create %s.\n", outfile);
         return false;
     }
-    int bits[7];
+     int padding =  (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
+    int bits[8];
     int w =0;
     for (int i = 0, biHeight = abs(bi.biHeight); i < biHeight; i++)
     {
@@ -88,7 +87,7 @@ bool decode()
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
             
                 bits[w++] = triple.rgbtRed&1;
-                if(w==7)
+                if(w==8)
                 {   
                     w=0;
                    if(!Makeme(bits,outptr))
@@ -97,7 +96,7 @@ bool decode()
                    }
                 }
                 bits[w++] = triple.rgbtBlue&1;
-                if(w==7)
+                if(w==8)
                 {   
                     w=0;
                     if(!Makeme(bits,outptr))
@@ -107,7 +106,7 @@ bool decode()
                     
                 }
                 bits[w++] = triple.rgbtGreen&1;
-                if(w==7)
+                if(w==8)
                 {   
                     w=0;
                    if(!Makeme(bits,outptr))
@@ -116,6 +115,7 @@ bool decode()
                    }
                 }
             }
+              fseek(inptr, padding, SEEK_CUR);
     }
         printf("\n");
     // close infile
@@ -186,7 +186,7 @@ bool encode()
     }
     //our way to know when to stop reading
     //3 - ETX - End of Text
-    info[ghgh++]='0';
+    info[ghgh++]='~';
     info[ghgh]='\0';
     fclose(read);
     // write outfile's BITMAPFILEHEADER
@@ -200,7 +200,7 @@ bool encode()
     for(int y =0;y<len;y++)
     {
         unsigned char ch=info[y];
-        for(int z =0;z<7;z++)
+        for(int z =0;z<8;z++)
         {
             bits[w++]=ch%2;
             ch=ch>>1;
