@@ -5,6 +5,17 @@
 #include "bmp.h"
 #include <stdbool.h>
 #include <math.h>
+int endianval;
+void endian()
+{
+   unsigned int i = 1;
+   char *c = (char*)&i;
+   if (*c)    
+       endianval=1;
+   else
+      endianval=128;
+    return;
+}
 int ConvertBinaryToDecimal(long long n)
 {
     int decimalNumber = 0, i = 0, remainder;
@@ -21,7 +32,10 @@ bool Makeme(int *bits,FILE *outptr)
 {
     
     char c[9];
-    sprintf(c,"%d%d%d%d%d%d%d%d",bits[7],bits[6],bits[5],bits[4],bits[3],bits[2],bits[1],bits[0]);
+    if(endianval==1)
+        sprintf(c,"%d%d%d%d%d%d%d",bits[6],bits[5],bits[4],bits[3],bits[2],bits[1],bits[0]);
+    else
+        sprintf(c,"%d%d%d%d%d%d%d",bits[0],bits[1],bits[2],bits[3],bits[4],bits[5],bits[6]);
     int d = atoi(c);
     char ch = ConvertBinaryToDecimal(d);
     if(ch=='~')
@@ -86,8 +100,8 @@ bool decode()
             // read RGB triple from infile
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
             
-                bits[w++] = triple.rgbtRed&1;
-                if(w==8)
+                bits[w++] = triple.rgbtRed%2;
+                if(w==7)
                 {   
                     w=0;
                    if(!Makeme(bits,outptr))
@@ -95,8 +109,8 @@ bool decode()
                        return true;
                    }
                 }
-                bits[w++] = triple.rgbtBlue&1;
-                if(w==8)
+                bits[w++] = triple.rgbtBlue%2;
+                if(w==7)
                 {   
                     w=0;
                     if(!Makeme(bits,outptr))
@@ -105,8 +119,8 @@ bool decode()
                     }
                     
                 }
-                bits[w++] = triple.rgbtGreen&1;
-                if(w==8)
+                bits[w++] = triple.rgbtGreen%2;
+                if(w==7)
                 {   
                     w=0;
                    if(!Makeme(bits,outptr))
@@ -197,16 +211,32 @@ bool encode()
     int len = strlen(info);
     int bits[1500000];
     int w=0;     // get the bits out of them. Words
-    for(int y =0;y<len;y++)
-    {
-        unsigned char ch=info[y];
-        for(int z =0;z<8;z++)
+    if(endianval==1)
+    {   for(int y =0;y<len;y++)
         {
-            bits[w++]=ch%2;
-            ch=ch>>1;
-            
+            unsigned char ch=info[y];
+            for(int z =0;z<7;z++)
+            {
+                bits[w++]=ch%2;
+                ch=ch>>1;
+                
+            }
+           
         }
-       
+    }
+    else
+    {
+        for(int y =0;y<len;y++)
+        {
+            unsigned char ch=info[y];
+            for(int z =0;z<7;z++)
+            {
+                bits[w++]=ch%2;
+                ch=ch<<1;
+                
+            }
+           
+        }
     }
     // How many were read
     printf("%d %d %d\n",len,w,ghgh);
@@ -279,6 +309,7 @@ int main(int argc, char* argv[])
         printf("Usage: ./stegano \n");
         return 1;
     }
+    endian();
     int choice;
     do{
         
