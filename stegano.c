@@ -6,15 +6,24 @@
 #include <stdbool.h>
 #include <math.h>
 int endianval;
-void endian()
+char keys[3][65]
+bool endian()
 {
    unsigned int i = 1;
    char *c = (char*)&i;
    if (*c)    
-       endianval=1;
-   else
-      endianval=128;
-    return;
+       return true;
+   return false;
+}
+int sizefactor(int txtSize,int imgSize)
+{
+    int n=1;
+    while(txtSize*7 >=imgSize)
+    {
+        imgSize*=2;
+        n++;
+    }
+    return n;
 }
 int ConvertBinaryToDecimal(long long n)
 {
@@ -32,7 +41,7 @@ bool Makeme(int *bits,FILE *outptr)
 {
     
     char c[9];
-    if(endianval==1)
+    if(endian())
         sprintf(c,"%d%d%d%d%d%d%d",bits[6],bits[5],bits[4],bits[3],bits[2],bits[1],bits[0]);
     else
         sprintf(c,"%d%d%d%d%d%d%d",bits[0],bits[1],bits[2],bits[3],bits[4],bits[5],bits[6]);
@@ -190,28 +199,44 @@ bool encode()
         fprintf(stderr, "Could not create %s.\n", filename);
         exit(1);
     }
-    //some variables. duh
-    char info[1500000]="";
-    int ghgh=0;
     
+    
+    //Re-sizing image to store all the data
+    fseek(read, 0L, SEEK_END);
+    int txtSize = ftell(read);
+    rewind(read); 
+    int ns=sizefactor(txtSize,bf.bfSize);
+     // determine padding for scanlines
+    int inipadding =  (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
+    //storing width of infile
+    int oldWidth = bi.biWidth; 
+    //storing width of outfile
+    int oldHeight = abs(bi.biHeight);
+    //updating dimensions for outfile
+    bi.biWidth*= ns;
+    bi.biHeight*= ns;
+    //Padding for outfile
+    int finpadding = (4- (bi.biWidth * sizeof(RGBTRIPLE)) % 4 ) %4;
+    //updating size of outfile image (Image size is sum of all RGB triplets)
+    bi.biSizeImage = abs(bi.biHeight) * (bi.biWidth * sizeof(RGBTRIPLE) + finpadding);
+    //updating size of outfile, ( file size is sum of all RGB triplets  and File headers)   
+    bf.bfSize = bi.biSizeImage + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+    
+    //variable to store all of that string
+    char *info=(char*)calloc(txtSize,sizeof(char));
+    int ghgh=0;
     while(!feof(read))
     {
         info[ghgh++]=fgetc(read);
     }
     //our way to know when to stop reading
-    //3 - ETX - End of Text
     info[ghgh++]='~';
     info[ghgh]='\0';
     fclose(read);
-    // write outfile's BITMAPFILEHEADER
-    fwrite(&bf, sizeof(BITMAPFILEHEADER), 1, outptr);
-    // write outfile's BITMAPINFOHEADER
-    fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
-
     int len = strlen(info);
-    int bits[1500000];
+    int *bits=(int*)calloc(txtSize*7,sizeof(int));
     int w=0;     // get the bits out of them. Words
-    if(endianval==1)
+    if(endian())
     {   for(int y =0;y<len;y++)
         {
             unsigned char ch=info[y];
@@ -239,53 +264,60 @@ bool encode()
         }
     }
     // How many were read
-    printf("%d %d %d\n",len,w,ghgh);
+    printf("%d %d %d %d\n",len,w,ghgh,ns);
     // To check later if everything got copied
     len=w;
     w=0;
-    
-    // determine padding for scanlines
-    int padding =  (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
+    int count =0
+    // write outfile's BITMAPFILEHEADER
+    fwrite(&bf, sizeof(BITMAPFILEHEADER), 1, outptr);
+    // write outfile's BITMAPINFOHEADER
+    fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
     // iterate over infile's scanlines
-    for (int i = 0, biHeight = abs(bi.biHeight); i < biHeight; i++)
+    for (int i = 0; i < oldHeight; i++)
     {
-        // iterate over pixels in scanline
-        for (int j = 0; j < bi.biWidth; j++)
+        for(int x = 0; x < ns; x++)
         {
-           
-            RGBTRIPLE triple;
-                    // read RGB triple from infile
-            fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
-          
-               
-            if(w<len)
+            fseek(inptr, ((sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)) +(oldWidth * 3 + inipadding) * i ), SEEK_SET);
+            // iterate over pixels in scanline
+            for (int j = 0; j < oldWidth; j++)
             {
-                        
-                        triple.rgbtRed = triple.rgbtRed%2==0?triple.rgbtRed:triple.rgbtRed-1;
-                        triple.rgbtRed = triple.rgbtRed+bits[w++];
+               
+                RGBTRIPLE triple;
+                        // read RGB triple from infile
+                fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+                
+                if(count%150)
+                for(int k=0;k<ns;k++)
+                { 
+                    
                     if(w<len)
                     {
-                        triple.rgbtBlue = triple.rgbtBlue%2==0?triple.rgbtBlue:triple.rgbtBlue-1;
-                        triple.rgbtBlue = triple.rgbtBlue+bits[w++];
+                                
+                                triple.rgbtRed = triple.rgbtRed%2==0?triple.rgbtRed:triple.rgbtRed-1;
+                                triple.rgbtRed = triple.rgbtRed+bits[w++];
+                            if(w<len)
+                            {
+                                triple.rgbtBlue = triple.rgbtBlue%2==0?triple.rgbtBlue:triple.rgbtBlue-1;
+                                triple.rgbtBlue = triple.rgbtBlue+bits[w++];
+                            }
+                            if(w<len)
+                            {
+                                triple.rgbtGreen = triple.rgbtGreen%2==0?triple.rgbtGreen:triple.rgbtGreen-1;
+                                triple.rgbtGreen = triple.rgbtGreen+bits[w++];
+                            }
                     }
-                    if(w<len)
-                    {
-                        triple.rgbtGreen = triple.rgbtGreen%2==0?triple.rgbtGreen:triple.rgbtGreen-1;
-                        triple.rgbtGreen = triple.rgbtGreen+bits[w++];
-                    }
+                 
+                    fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+                    count=count%150 + 1;
+                }
             }
-         
-            fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
-            
-        }
-
-        // skip over padding, if any
-        fseek(inptr, padding, SEEK_CUR);
-        
-        // then add it back (to demonstrate how)
-        for (int k = 0; k < padding; k++)
-        {
+    
+            // adding padding over to the new file, if needed
+            for (int k = 0; k < finpadding; k++)
+            {
             fputc(0x00, outptr);
+            }
         }
     }
 
@@ -309,7 +341,10 @@ int main(int argc, char* argv[])
         printf("Usage: ./stegano \n");
         return 1;
     }
-    endian();
+    //keys
+    strcpy(keys[0],"D95CB76299BFDD37DA4sD35B652919002BF577C1E6B2E497A3E0B80A1DF5B6376");
+    strcpy(keys[1],"<@(=}doI>!GhnBd!OsdZSSF*/;_E$-Ai(/$5/:+HUqk@za4]+hbM&_5K:_Vrg?P!");
+    strcpy(keys[2],"+rEMo&y:,v4I(p]*14A{!yWr{^cL6YHN@yj,08*#-DrBjk8[JzbJAD;G7=y9Q0s");
     int choice;
     do{
         
