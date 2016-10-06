@@ -5,8 +5,12 @@
 #include "bmp.h"
 #include <stdbool.h>
 #include <math.h>
-int endianval;
-char keys[3][65]
+bool endian();
+int ConvertBinaryToDecimal(long long n);
+bool Makeme(int *bits,FILE *outptr);
+bool decode();
+bool encode();
+
 bool endian()
 {
    unsigned int i = 1;
@@ -268,7 +272,7 @@ bool encode()
     // To check later if everything got copied
     len=w;
     w=0;
-    int count =0
+    int count =0;
     // write outfile's BITMAPFILEHEADER
     fwrite(&bf, sizeof(BITMAPFILEHEADER), 1, outptr);
     // write outfile's BITMAPINFOHEADER
@@ -287,7 +291,6 @@ bool encode()
                         // read RGB triple from infile
                 fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
                 
-                if(count%150)
                 for(int k=0;k<ns;k++)
                 { 
                     
@@ -333,18 +336,9 @@ bool encode()
     // that's all folks
     return true;
 }
-int main(int argc, char* argv[])
+int main(void)
 {
-    // ensure proper usage
-    if (argc != 1)
-    {
-        printf("Usage: ./stegano \n");
-        return 1;
-    }
-    //keys
-    strcpy(keys[0],"D95CB76299BFDD37DA4sD35B652919002BF577C1E6B2E497A3E0B80A1DF5B6376");
-    strcpy(keys[1],"<@(=}doI>!GhnBd!OsdZSSF*/;_E$-Ai(/$5/:+HUqk@za4]+hbM&_5K:_Vrg?P!");
-    strcpy(keys[2],"+rEMo&y:,v4I(p]*14A{!yWr{^cL6YHN@yj,08*#-DrBjk8[JzbJAD;G7=y9Q0s");
+
     int choice;
     do{
         
