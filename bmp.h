@@ -6,6 +6,8 @@
  *
  * BMP-related data types based on Microsoft's own.
  */
+#ifndef _INCL_GUARD
+#define _INCL_GUARD
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -80,7 +82,4 @@ typedef struct
     BYTE  rgbtRed;
 } __attribute__((__packed__))
 RGBTRIPLE;
-int ConvertBinaryToDecimal(long long n);
-bool Makeme(int *bits,FILE *outptr);
-bool decode();
-bool encode();
+#endif
